@@ -4,7 +4,50 @@ This project is an example of how to use the Pulpoar Skin Analysis Plugin in an 
 
 Please note that you need to have Android Studio or Xcode installed on your machine to run the app in an emulator or on a device.
 
-## 1. Customize the template ID
+> **Note:** The core integration with the event listening function is implemented in `app/index.tsx`. The following steps are only necessary for setting up and running the Expo app.
+
+Here's an example code snippet of how to handle events like "Add to Cart" or "Go to Product" in the result page, implemented in `app/index.tsx`:
+
+```typescript
+import { WebView, WebViewMessageEvent } from 'react-native-webview';
+
+const onMessageReceived = (event: WebViewMessageEvent | MessageEvent<any>) => {
+  try {
+    let data: any;
+
+    if ('nativeEvent' in event) {
+      data = event.nativeEvent.data;
+    } else {
+      console.error('Unexpected event structure:', event);
+      return;
+    }
+
+    if (typeof data === 'string' && data.startsWith('event_id:')) {
+      console.log('Received string data:', data);
+      const [eventId, eventData] = data.split('|');
+      const key = eventId.split(':')[1];
+      const value = eventData.split(':')[1];
+      // Handle the event data as needed
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
+  }
+};
+
+<WebView
+  source={{ uri: PLUGIN_URL }}
+  style={{ flex: 1 }}
+  onMessage={onMessageReceived}
+/>;
+```
+
+## 1. Install dependencies
+
+```bash
+npm install
+```
+
+## 2. Customize the template ID
 
 This app uses a default `TEMPLATE_ID` for demonstration purposes. To use your own Pulpoar Skin Analysis Plugin, you need to update the `TEMPLATE_ID` in the `app/index.tsx` file.
 
@@ -18,12 +61,6 @@ To do this:
 3. Replace the value with your own template ID provided by Pulpoar.
 
 Ensure you have the correct template ID to properly integrate your specific Skin Analysis Plugin.
-
-## 2. Install dependencies
-
-```bash
-npm install
-```
 
 ## 3. Android and iOS Permissions
 
