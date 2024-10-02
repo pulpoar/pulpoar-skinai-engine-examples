@@ -1,4 +1,4 @@
-# PulpoAR Integration
+# PulpoAR SkinAI Integration
 
 This module provides an example of how to integrate the Pulpoar Skin Analysis Plugin into a Kotlin Android application using a WebView.
 

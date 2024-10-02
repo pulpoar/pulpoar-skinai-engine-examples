@@ -1,4 +1,4 @@
-# Expo Skin Analysis App Example
+# PulpoAR SkinAI Integration
 
 This project is an example of how to use the Pulpoar Skin Analysis Plugin in an Expo React Native app.
 
