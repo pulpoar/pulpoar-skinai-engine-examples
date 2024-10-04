@@ -31,7 +31,7 @@ supportFragmentManager.beginTransaction()
     .commit()
 ```
 
-## Handling Events
+## Event Handling
 
 The `PulpoARFragment` listens for postMessage events from the WebView and processes them. Here's how it works:
 
@@ -88,4 +88,3 @@ You can extend the `handlePostMessage` method to add custom behavior for differe
 ## Customization
 
 You can customize the PulpoAR plugin URL by modifying the `BASE_PLUGIN_URL` and `TEMPLATE_ID` constants in the `PulpoARFragment` companion object.
-
