@@ -61,26 +61,36 @@ webView.addJavascriptInterface(object : Any() {
 3. The `handlePostMessage` method processes the received messages:
 
 ```kotlin
-private fun handlePostMessage(message: String) {
-    try {
-        // Log the raw message
-        Log.d("PulpoARFragment", "Received postMessage: $message")
+    private fun handlePostMessage(message: String) {
+        try {
+            // Log the raw message
+            Log.d("PulpoARFragment", "Received postMessage: $message")
 
-        // Parse the message
-        val parts = message.split(" | ")
-        if (parts.size == 2) {
-            val eventId = parts[0].substringAfter("event_id:")
-            val data = parts[1].substringAfter("data:")
+            // Parse the message as JSON
+            val jsonObject = JSONObject(message)
+            val eventId = jsonObject.getString("event_id")
+            val data = if (jsonObject.has("data")) {
+                if (jsonObject.get("data") is JSONObject) {
+                    jsonObject.getJSONObject("data").toString()
+                } else {
+                    jsonObject.getString("data")
+                }
+            } else {
+                null
+            }
 
             // Log the parsed message
             Log.d("PulpoARFragment", "Event ID: $eventId, Data: $data")
-        } else {
-            Log.e("PulpoARFragment", "Invalid message format: $message")
+
+            // Handle the event based on eventId
+            when (eventId) {
+                // Add specific event handling here
+                else -> Log.d("PulpoARFragment", "Unhandled event: $eventId")
+            }
+        } catch (e: Exception) {
+            Log.e("PulpoARFragment", "Error parsing postMessage: ${e.message}")
         }
-    } catch (e: Exception) {
-        Log.e("PulpoARFragment", "Error parsing postMessage: ${e.message}")
     }
-}
 ```
 
 You can extend the `handlePostMessage` method to add custom behavior for different event types based on the `eventId` and `data` parsed from the message.

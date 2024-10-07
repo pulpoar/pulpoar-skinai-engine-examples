@@ -115,21 +115,39 @@ class PulpoARFragment : Fragment() {
             // Log the raw message
             Log.d("PulpoARFragment", "Received postMessage: $message")
 
-            // Parse the message
-            val parts = message.split(" | ")
-            if (parts.size == 2) {
-                val eventId = parts[0].substringAfter("event_id:")
-                val data = parts[1].substringAfter("data:")
+            // Parse the message as JSON
+            val jsonObject = JSONObject(message)
+            
+            // Safely get event_id and data
+            val eventId = jsonObject.optString("event_id", null)
+            val data: String? = if (jsonObject.has("data")) {
+                if (jsonObject.get("data") is JSONObject) {
+                    jsonObject.getJSONObject("data").toString()
+                } else {
+                    jsonObject.optString("data", null)
+                }
+            } else {
+                null
+            }
 
+            // Check for valid event_id before proceeding
+            if (eventId != null) {
                 // Log the parsed message
                 Log.d("PulpoARFragment", "Event ID: $eventId, Data: $data")
+
+                // Handle the event based on eventId
+                when (eventId) {
+                    // Add specific event handling here
+                    else -> Log.d("PulpoARFragment", "Unhandled event: $eventId")
+                }
             } else {
-                Log.e("PulpoARFragment", "Invalid message format: $message")
+                Log.e("PulpoARFragment", "Missing event_id in message")
             }
         } catch (e: Exception) {
-            Log.e("PulpoARFragment", "Error parsing postMessage: ${e.message}")
+            Log.e("PulpoARFragment", "Error parsing postMessage", e)  // Logs full stack trace
         }
     }
+
 
     companion object {
         private const val BASE_PLUGIN_URL = "https://booster.pulpoar.com/engine/v0/"

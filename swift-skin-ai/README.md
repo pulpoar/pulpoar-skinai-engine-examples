@@ -32,38 +32,51 @@ struct ContentView: View {
 
 The PulpoARView now uses a WKScriptMessageHandler to receive events from the WebView. Events are processed in the `handlePostMessage(_:)` method. Here's how events are structured and handled:
 
-1. Events are received as strings in the format: `"event_id:XYZ | data:ABC"`
-2. The `handlePostMessage(_:)` method parses this string to extract the event ID and data.
+1. Events are received as object.
+2. The `handlePostMessage(_:)` method parses this payload.
 3. You can then handle specific events based on the event ID.
 
 Example of how events are processed:
 
 ```swift
-private func handlePostMessage(_ message: String) {
-    let parts = message.components(separatedBy: " | ")
-    guard parts.count == 2 else {
-        print("Invalid message format: \(message)")
+func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+    guard message.name == "jsHandler" else {
+        print("Received message from unknown handler: \(message.name)")
         return
     }
 
-    let eventIdPart = parts[0].split(separator: ":")
-    let dataPart = parts[1].split(separator: ":")
-
-    guard eventIdPart.count == 2, dataPart.count == 2 else {
-        print("Invalid key-value pair in message: \(message)")
+    // Ensure the message body is a dictionary
+    guard let messageDict = message.body as? [String: Any] else {
+        print("Message body is not a dictionary. Received: \(message.body)")
         return
     }
 
-    let eventId = eventIdPart.last?.trimmingCharacters(in: .whitespaces)
-    let data = dataPart.last?.trimmingCharacters(in: .whitespaces)
-
-    guard let validEventId = eventId, let validData = data else {
-        print("Failed to extract event_id or data from message: \(message)")
+    // Extract the event_id and data fields from the dictionary
+    guard let eventId = messageDict["event_id"] as? String else {
+        print("Message does not contain a valid 'event_id'. Received: \(messageDict)")
         return
     }
 
-    print("Event ID: \(validEventId), Data: \(validData)")
-    // Handle specific events based on the eventId here
+    // Check if data is a string or a dictionary (object)
+    var data: String? = nil
+    if let dataDict = messageDict["data"] as? [String: Any] {
+        // Convert dictionary to string if needed
+        if let jsonData = try? JSONSerialization.data(withJSONObject: dataDict, options: []),
+        let jsonString = String(data: jsonData, encoding: .utf8) {
+            data = jsonString
+        } else {
+            print("Failed to serialize 'data' to JSON string. Received: \(dataDict)")
+            return
+        }
+    } else if let dataString = messageDict["data"] as? String {
+        data = dataString
+    } else {
+        print("Message does not contain a valid 'data' field. Received: \(messageDict)")
+        return
+    }
+
+    // Log the event_id and data for debugging
+    print("Event ID: \(eventId), Data: \(data ?? "No data")")
 }
 ```
 

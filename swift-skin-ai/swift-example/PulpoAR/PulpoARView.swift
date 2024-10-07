@@ -75,43 +75,39 @@ class PulpoARView: UIViewController, WKScriptMessageHandler, WKNavigationDelegat
             print("Received message from unknown handler: \(message.name)")
             return
         }
+        
+        // Ensure the message body is a dictionary
         guard let messageDict = message.body as? [String: Any] else {
             print("Message body is not a dictionary. Received: \(message.body)")
             return
         }
-        guard let messageString = messageDict["message"] as? String else {
-            print("Message format incorrect. Expected a 'message' key with a string value. Received: \(messageDict)")
+        
+        // Extract the event_id and data fields from the dictionary
+        guard let eventId = messageDict["event_id"] as? String else {
+            print("Message does not contain a valid 'event_id'. Received: \(messageDict)")
             return
         }
-        handlePostMessage(messageString)
-    }
-
-    private func handlePostMessage(_ message: String) {
-        let parts = message.components(separatedBy: " | ")
-        // Validate that we have exactly two parts: event_id and data
-        guard parts.count == 2 else {
-            print("Invalid message format: expected 'event_id:XYZ | data:ABC'. Received: \(message)")
+        
+        // Check if data is a string or a dictionary (object)
+        var data: String? = nil
+        if let dataDict = messageDict["data"] as? [String: Any] {
+            // Convert dictionary to string if needed
+            if let jsonData = try? JSONSerialization.data(withJSONObject: dataDict, options: []),
+            let jsonString = String(data: jsonData, encoding: .utf8) {
+                data = jsonString
+            } else {
+                print("Failed to serialize 'data' to JSON string. Received: \(dataDict)")
+                return
+            }
+        } else if let dataString = messageDict["data"] as? String {
+            data = dataString
+        } else {
+            print("Message does not contain a valid 'data' field. Received: \(messageDict)")
             return
         }
-        // Further split and validate event_id and data
-        let eventIdPart = parts[0].split(separator: ":")
-        let dataPart = parts[1].split(separator: ":")
-
-        guard eventIdPart.count == 2, dataPart.count == 2 else {
-            print("Invalid key-value pair in message. Expected 'event_id:XYZ | data:ABC'. Received: \(message)")
-            return
-        }
-
-        // Extract event_id and data
-        let eventId = eventIdPart.last?.trimmingCharacters(in: .whitespaces)
-        let data = dataPart.last?.trimmingCharacters(in: .whitespaces)
-
-        guard let validEventId = eventId, let validData = data else {
-            print("Failed to extract event_id or data from message. Received: \(message)")
-            return
-        }
-
-        print("Event ID: \(validEventId), Data: \(validData)")
+        
+        // Log the event_id and data for debugging
+        print("Event ID: \(eventId), Data: \(data ?? "No data")")
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
