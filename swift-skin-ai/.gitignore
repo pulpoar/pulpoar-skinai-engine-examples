@@ -13,3 +13,13 @@ DerivedData/
 # Dependency managers
 Carthage/Build/
 # Pods/  # Uncomment based on preference
+
+# Ignore user-specific Xcode data
+*.xcuserdatad
+xcuserdata/
+project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Ignore specific plist files inside xcuserdata
+project.xcworkspace/xcuserdata/**/IDEFindNavigatorScopes.plist
+project.xcworkspace/xcuserdata/**/xcschemes/xcschememanagement.plist
