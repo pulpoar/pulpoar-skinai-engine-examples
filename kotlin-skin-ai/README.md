@@ -35,62 +35,73 @@ supportFragmentManager.beginTransaction()
 
 The `PulpoARFragment` listens for postMessage events from the WebView and processes them. Here's how it works:
 
-1. A JavaScript interface is added to the WebView to receive postMessages:
+1. Add a JavaScript Interface to the WebView
+
+The `JSBridge` class is added as a JavaScript interface to enable communication between JavaScript and Kotlin.
 
 ```kotlin
-webView.evaluateJavascript("""
-    window.addEventListener('message', function(event) {
-        window.AndroidInterface.onMessageReceived(event.data);
-    });
-""".trimIndent(), null)
-```
-
-2. The `AndroidInterface` is set up to handle these messages:
-
-```kotlin
-webView.addJavascriptInterface(object : Any() {
+class JSBridge(private val listener: (String) -> Unit) {
     @JavascriptInterface
-    fun onMessageReceived(message: String) {
-        activity?.runOnUiThread {
+    fun postMessage(message: String) {
+        try {
+            listener(message)
+        } catch (e: Exception) {
+            Log.e("PulpoARFragment", "Error in JSBridge: ${e.message}")
+        }
+    }
+}
+
+// Adding the JavaScript interface
+webView.addJavascriptInterface(JSBridge { message ->
+    activity?.let { activity ->
+        activity.runOnUiThread {
             handlePostMessage(message)
         }
-    }
-}, "AndroidInterface")
+    } ?: Log.e("PulpoARFragment", "Activity is null")
+}, "JSBridge")
+
 ```
 
-3. The `handlePostMessage` method processes the received messages:
+2. WebView Client Configuration
 
 ```kotlin
-    private fun handlePostMessage(message: String) {
-        try {
-            // Log the raw message
-            Log.d("PulpoARFragment", "Received postMessage: $message")
-
-            // Parse the message as JSON
-            val jsonObject = JSONObject(message)
-            val eventId = jsonObject.getString("event_id")
-            val data = if (jsonObject.has("data")) {
-                if (jsonObject.get("data") is JSONObject) {
-                    jsonObject.getJSONObject("data").toString()
-                } else {
-                    jsonObject.getString("data")
-                }
-            } else {
-                null
-            }
-
-            // Log the parsed message
-            Log.d("PulpoARFragment", "Event ID: $eventId, Data: $data")
-
-            // Handle the event based on eventId
-            when (eventId) {
-                // Add specific event handling here
-                else -> Log.d("PulpoARFragment", "Unhandled event: $eventId")
-            }
-        } catch (e: Exception) {
-            Log.e("PulpoARFragment", "Error parsing postMessage: ${e.message}")
-        }
+webView.webViewClient = object : WebViewClient() {
+    override fun onPageFinished(view: WebView?, url: String?) {
+        super.onPageFinished(view, url)
+        Log.d("PulpoARFragment", "WebView page loaded and JSBridge is ready.")
     }
+}
+
+// Load the WebView content
+webView.loadUrl(PLUGIN_URL)
+
+```
+
+3. The `handlePostMessage` method processes messages sent from JavaScript and handles them based on their event_id.
+
+```kotlin
+private fun handlePostMessage(message: String) {
+    try {
+        // Log the raw message
+        Log.d("PulpoARFragment", "Received postMessage: $message")
+
+        // Parse the message as JSON
+        val jsonObject = JSONObject(message)
+        val eventId = jsonObject.optString("event_id")
+        val data = jsonObject.optJSONObject("data")?.toString() ?: jsonObject.optString("data")
+
+        // Log the parsed message
+        Log.d("PulpoARFragment", "Event ID: $eventId, Data: $data")
+
+        // Handle the event based on eventId
+        when (eventId) {
+            // Add specific event handling here
+            else -> Log.d("PulpoARFragment", "Unhandled event: $eventId")
+        }
+    } catch (e: Exception) {
+        Log.e("PulpoARFragment", "Error parsing postMessage: ${e.message}")
+    }
+}
 ```
 
 You can extend the `handlePostMessage` method to add custom behavior for different event types based on the `eventId` and `data` parsed from the message.

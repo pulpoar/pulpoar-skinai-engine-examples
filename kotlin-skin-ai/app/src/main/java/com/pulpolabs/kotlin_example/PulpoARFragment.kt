@@ -84,28 +84,33 @@ class PulpoARFragment : Fragment() {
             }
         }
 
+        class JSBridge(private val listener: (String) -> Unit) {
+            @JavascriptInterface
+            fun postMessage(message: String) {
+                try {
+                    listener(message)
+                } catch (e: Exception) {
+                    Log.e("PulpoARFragment", "Error in JSBridge: ${e.message}")
+                }
+            }
+        }
+
+        // Adding the JavaScript interface
+        webView.addJavascriptInterface(JSBridge { message ->
+            activity?.let { activity ->
+                activity.runOnUiThread {
+                    handlePostMessage(message)
+                }
+            } ?: Log.e("PulpoARFragment", "Activity is null")
+        }, "JSBridge")
+
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
 
-                // Add a JavaScript interface to receive postMessages
-                webView.evaluateJavascript("""
-                    window.addEventListener('message', function(event) {
-                        window.AndroidInterface.onMessageReceived(event.data);
-                    });
-                """.trimIndent(), null)
+                Log.d("PulpoARFragment", "WebView page loaded and JSBridge is ready.")
             }
         }
-
-        // Add a JavaScript interface to handle postMessages
-        webView.addJavascriptInterface(object : Any() {
-            @JavascriptInterface
-            fun onMessageReceived(message: String) {
-                activity?.runOnUiThread {
-                    handlePostMessage(message)
-                }
-            }
-        }, "AndroidInterface")
 
         webView.loadUrl(PLUGIN_URL)
     }
@@ -117,37 +122,21 @@ class PulpoARFragment : Fragment() {
 
             // Parse the message as JSON
             val jsonObject = JSONObject(message)
-            
-            // Safely get event_id and data
-            val eventId = jsonObject.optString("event_id", null)
-            val data: String? = if (jsonObject.has("data")) {
-                if (jsonObject.get("data") is JSONObject) {
-                    jsonObject.getJSONObject("data").toString()
-                } else {
-                    jsonObject.optString("data", null)
-                }
-            } else {
-                null
-            }
+            val eventId = jsonObject.optString("event_id")
+            val data = jsonObject.optJSONObject("data")?.toString() ?: jsonObject.optString("data")
 
-            // Check for valid event_id before proceeding
-            if (eventId != null) {
-                // Log the parsed message
-                Log.d("PulpoARFragment", "Event ID: $eventId, Data: $data")
+            // Log the parsed message
+            Log.d("PulpoARFragment", "Event ID: $eventId, Data: $data")
 
-                // Handle the event based on eventId
-                when (eventId) {
-                    // Add specific event handling here
-                    else -> Log.d("PulpoARFragment", "Unhandled event: $eventId")
-                }
-            } else {
-                Log.e("PulpoARFragment", "Missing event_id in message")
+            // Handle the event based on eventId
+            when (eventId) {
+                // Add specific event handling here
+                else -> Log.d("PulpoARFragment", "Unhandled event: $eventId")
             }
         } catch (e: Exception) {
-            Log.e("PulpoARFragment", "Error parsing postMessage", e)  // Logs full stack trace
+            Log.e("PulpoARFragment", "Error parsing postMessage: ${e.message}")
         }
     }
-
 
     companion object {
         private const val BASE_PLUGIN_URL = "https://booster.pulpoar.com/engine/v0/"
