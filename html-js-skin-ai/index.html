@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkinAI Engine - Iframe Integration Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="iframe-container">
+      <!-- Replace the UUID in the src URL with your own SkinAI Engine template ID -->
+      <iframe
+      id="skinai-engine"
+        src="https://skinai-engine.pulpoar.com/engine/v0/9e41c81a-1f68-47de-af4f-2709f0ff09a5"
+        allow="camera *"
+        title="SkinAI Engine"
+      ></iframe>
+    </div>
+
+    <!-- Events Panel -->
+    <div class="events-panel">
+      <div class="panel-header">
+        <h2>Events Monitor</h2>
+        <span class="event-count" id="event-count">0</span>
+      </div>
+
+      <div class="status-indicator">
+        <span class="status-dot"></span>
+        <span>Listening for events...</span>
+      </div>
+
+      <div class="panel-controls">
+        <button class="btn btn-clear" onclick="clearEvents()">Clear All</button>
+        <button class="btn btn-export" onclick="exportEvents()">Export JSON</button>
+      </div>
+
+      <div class="events-log" id="events-log">
+        <div class="empty-state">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+          </svg>
+          <h3>No events yet</h3>
+          <p>Interact with the SkinAI Engine to see events appear here</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+</html>
